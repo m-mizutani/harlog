@@ -1,6 +1,8 @@
 package harlog
 
 import (
+	"bytes"
+	"io"
 	"net/http"
 	"time"
 )
@@ -88,7 +90,7 @@ func (l *Logger) captureRequest(r *http.Request) HARRequest {
 		}
 	}
 
-	return HARRequest{
+	req := HARRequest{
 		Method:      r.Method,
 		URL:         r.URL.String(),
 		HTTPVersion: r.Proto,
@@ -97,6 +99,22 @@ func (l *Logger) captureRequest(r *http.Request) HARRequest {
 		HeadersSize: -1, // Not implemented
 		BodySize:    -1, // Not implemented
 	}
+
+	// Capture request body if present
+	if r.Body != nil && r.Method != http.MethodGet {
+		body, err := io.ReadAll(r.Body)
+		if err == nil {
+			req.PostData = &HARPostData{
+				MimeType: r.Header.Get("Content-Type"),
+				Text:     string(body),
+			}
+			req.BodySize = len(body)
+			// Restore the body for further processing
+			r.Body = io.NopCloser(bytes.NewReader(body))
+		}
+	}
+
+	return req
 }
 
 func (l *Logger) captureResponse(rw *responseWriter) HARResponse {
