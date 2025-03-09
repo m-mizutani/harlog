@@ -1,5 +1,9 @@
 package harlog
 
+import (
+	"net/http"
+)
+
 // HAR represents the root of a HAR log
 type HAR struct {
 	Log HARLog `json:"log"`
@@ -87,3 +91,12 @@ type HARTimings struct {
 	Wait    float64 `json:"wait"`
 	Receive float64 `json:"receive"`
 }
+
+// HTTPMessage represents a pair of HTTP request and response
+type HTTPMessage struct {
+	Request  *http.Request
+	Response *http.Response
+}
+
+// HTTPMessages represents a collection of HTTP messages
+type HTTPMessages []HTTPMessage
