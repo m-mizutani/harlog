@@ -8,12 +8,19 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
 // ParseHARFile reads a HAR file and converts it to HTTP messages
 func ParseHARFile(filename string) (HTTPMessages, error) {
-	data, err := os.ReadFile(filename)
+	// Validate and clean the file path
+	cleanPath := filepath.Clean(filename)
+	if !filepath.IsAbs(cleanPath) {
+		cleanPath = filepath.Clean(filepath.Join(".", cleanPath))
+	}
+
+	data, err := os.ReadFile(cleanPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read HAR file: %w", err)
 	}
@@ -28,7 +35,9 @@ func ParseHARData(data []byte) (HTTPMessages, error) {
 	}
 
 	messages := make(HTTPMessages, 0, len(har.Log.Entries))
-	for _, entry := range har.Log.Entries {
+	for i := range har.Log.Entries {
+		// Create a copy of the entry to avoid memory aliasing
+		entry := har.Log.Entries[i]
 		req, err := convertHARRequestToHTTP(&entry.Request)
 		if err != nil {
 			return nil, fmt.Errorf("failed to convert HAR request: %w", err)
