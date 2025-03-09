@@ -108,7 +108,7 @@ func New(opts ...Option) *Logger {
 	l := &Logger{
 		handler:    http.DefaultServeMux,
 		transport:  http.DefaultTransport,
-		outputDir:  "har_logs",
+		outputDir:  ".",
 		logger:     slog.New(slog.NewTextHandler(os.Stderr, nil)),
 		fileNameFn: defaultFileNameFn,
 	}

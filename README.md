@@ -28,35 +28,34 @@ go get github.com/m-mizutani/harlog
 
 ### Server-side (Middleware Pattern)
 
-The recommended way to use harlog on the server side is with the standard middleware pattern:
+The recommended way to use harlog on the server side is with the standard middleware pattern. Here's an example using [chi](https://github.com/go-chi/chi) router:
 
 ```go
 package main
 
 import (
     "net/http"
+    "github.com/go-chi/chi/v5"
     "github.com/m-mizutani/harlog"
 )
 
 func main() {
-    // Create a new logger with custom options
-    logger := harlog.New(
-        harlog.WithOutputDir("har_logs"),
-        harlog.WithFileNameFn(func(req *http.Request) string {
-            return fmt.Sprintf("logs/%s_%s.har",
-                time.Now().Format("20060102-150405"),
-                req.URL.Path)
-        }),
-    )
+    // Create a new router
+    r := chi.NewRouter()
 
-    // Create your handler
-    handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+    // Create a new logger
+    logger := harlog.New()
+
+    // Use harlog middleware for all routes
+    r.Use(logger.Middleware)
+
+    // Add your routes
+    r.Get("/", func(w http.ResponseWriter, r *http.Request) {
         w.Write([]byte("Hello, World!"))
     })
 
-    // Use as middleware
-    http.Handle("/", logger.Middleware(handler))
-    http.ListenAndServe(":8080", nil)
+    // Start the server
+    http.ListenAndServe(":8080", r)
 }
 ```
 
@@ -79,7 +78,6 @@ func main() {
     })
 
     logger := harlog.New(
-        harlog.WithOutputDir("har_logs"),
         harlog.WithHandler(handler),
     )
 
@@ -99,11 +97,8 @@ import (
 )
 
 func main() {
-    // Create a new logger with custom transport
-    logger := harlog.New(
-        harlog.WithOutputDir("har_logs"),
-        harlog.WithTransport(http.DefaultTransport),
-    )
+    // Create a new logger
+    logger := harlog.New()
 
     // Create an HTTP client
     client := &http.Client{
@@ -124,7 +119,7 @@ func main() {
 harlog uses the functional options pattern for configuration. The following options are available:
 
 ```go
-// Set the output directory for HAR files (default: "har_logs")
+// Set the output directory for HAR files (default: ".")
 harlog.WithOutputDir("custom_logs")
 
 // Set a custom filename generator function
@@ -140,7 +135,7 @@ harlog.WithTransport(customTransport)
 ```
 
 If no options are provided, harlog will use these defaults:
-- Output directory: "har_logs"
+- Output directory: "." (current directory)
 - Filename: timestamp-based format (`YYYYMMDD-HHMMSS.SSS.har`)
 - Handler: `http.DefaultServeMux`
 - Transport: `http.DefaultTransport`
