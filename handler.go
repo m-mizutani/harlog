@@ -23,15 +23,15 @@ func (rw *responseWriter) Write(b []byte) (int, error) {
 }
 
 // ServeHTTP implements http.Handler interface for backward compatibility
-func (h *HARLogger) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if h.handler == nil {
-		h.handler = http.DefaultServeMux
+func (l *Logger) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if l.handler == nil {
+		l.handler = http.DefaultServeMux
 	}
-	h.Middleware(h.handler).ServeHTTP(w, r)
+	l.Middleware(l.handler).ServeHTTP(w, r)
 }
 
 // Middleware creates a new middleware handler
-func (h *HARLogger) Middleware(next http.Handler) http.Handler {
+func (l *Logger) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		harEntry := &HAREntry{
@@ -46,21 +46,28 @@ func (h *HARLogger) Middleware(next http.Handler) http.Handler {
 		}
 
 		// Record request
-		harEntry.Request = h.captureRequest(r)
+		harEntry.Request = l.captureRequest(r)
 
 		// Call the next handler
 		next.ServeHTTP(rw, r)
 
 		// Record response
-		harEntry.Response = h.captureResponse(rw)
+		harEntry.Response = l.captureResponse(rw)
 		harEntry.Time = float64(time.Since(start).Milliseconds())
 
 		// Save HAR entry
-		h.saveHAR(r, harEntry)
+		if err := l.saveHAR(r, harEntry); err != nil {
+			l.logger.Error("failed to save HAR",
+				"error", err,
+				"path", r.URL.Path,
+				"method", r.Method,
+				"host", r.Host,
+			)
+		}
 	})
 }
 
-func (h *HARLogger) captureRequest(r *http.Request) HARRequest {
+func (l *Logger) captureRequest(r *http.Request) HARRequest {
 	headers := make([]HARHeader, 0)
 	for name, values := range r.Header {
 		for _, value := range values {
@@ -92,7 +99,7 @@ func (h *HARLogger) captureRequest(r *http.Request) HARRequest {
 	}
 }
 
-func (h *HARLogger) captureResponse(rw *responseWriter) HARResponse {
+func (l *Logger) captureResponse(rw *responseWriter) HARResponse {
 	headers := make([]HARHeader, 0)
 	for name, values := range rw.Header() {
 		for _, value := range values {
