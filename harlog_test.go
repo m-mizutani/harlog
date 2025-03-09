@@ -20,7 +20,9 @@ func TestHARLogger_Handler(t *testing.T) {
 	// Create test handler
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"message": "Hello, World!"}`))
+		if _, err := w.Write([]byte(`{"message": "Hello, World!"}`)); err != nil {
+			t.Error("failed to write response:", err)
+		}
 	})
 
 	// Create logger with custom options
@@ -61,7 +63,9 @@ func TestHARLogger_Middleware(t *testing.T) {
 	// Create test handler
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"message": "Hello, World!"}`))
+		if _, err := w.Write([]byte(`{"message": "Hello, World!"}`)); err != nil {
+			t.Error("failed to write response:", err)
+		}
 	})
 
 	// Create logger with custom options
@@ -101,7 +105,9 @@ func TestHARLogger_RoundTripper(t *testing.T) {
 	// Create test server
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"message": "Hello, World!"}`))
+		if _, err := w.Write([]byte(`{"message": "Hello, World!"}`)); err != nil {
+			t.Error("failed to write response:", err)
+		}
 	}))
 	defer server.Close()
 

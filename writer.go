@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 func (l *Logger) saveHAR(req *http.Request, entry *HAREntry) error {
@@ -27,7 +28,17 @@ func (l *Logger) saveHAR(req *http.Request, entry *HAREntry) error {
 	if err != nil {
 		return fmt.Errorf("failed to get absolute path of file: %w", err)
 	}
-	if !filepath.HasPrefix(absFilename, absOutputDir) {
+
+	// Clean paths and ensure they are in canonical form
+	absOutputDir = filepath.Clean(absOutputDir)
+	absFilename = filepath.Clean(absFilename)
+
+	// Check if the file path is within the output directory
+	rel, err := filepath.Rel(absOutputDir, absFilename)
+	if err != nil {
+		return fmt.Errorf("failed to get relative path: %w", err)
+	}
+	if strings.HasPrefix(rel, ".."+string(filepath.Separator)) || rel == ".." {
 		return fmt.Errorf("file path %s is outside of output directory %s", filename, l.outputDir)
 	}
 
@@ -42,7 +53,7 @@ func (l *Logger) saveHAR(req *http.Request, entry *HAREntry) error {
 		},
 	}
 
-	file, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0640)
+	file, err := os.OpenFile(absFilename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
 		return fmt.Errorf("failed to create file: %w", err)
 	}
