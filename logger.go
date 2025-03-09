@@ -72,14 +72,14 @@ func (l *Logger) defaultFileNameFn(req *http.Request) string {
 		host = "unknown"
 	}
 
-	// Create a unique identifier using timestamp, host, method, and path
-	// Format: YYYYMMDD-HHMMSS.mmm-{uuid}-{host}-{method}-{path}.har
+	// Format: {timestamp}-{uuid}-{method}-{host}-{path}.har
+	// Example: 20240315-123456.789-a1b2c3d4-GET-example.com-api-users.har
 	return filepath.Join(l.outputDir,
 		fmt.Sprintf("%s-%s-%s-%s-%s.har",
 			now.Format("20060102-150405.000"),
 			uuid.New().String()[:8],
-			sanitizeFilename(host),
 			req.Method,
+			sanitizeFilename(host),
 			sanitizeFilename(req.URL.Path),
 		),
 	)
@@ -87,20 +87,28 @@ func (l *Logger) defaultFileNameFn(req *http.Request) string {
 
 // sanitizeFilename removes or replaces characters that might be problematic in filenames
 func sanitizeFilename(s string) string {
-	// Replace problematic characters with underscore
+	// First, replace all problematic characters with hyphen
 	replacer := strings.NewReplacer(
-		"/", "_",
-		"\\", "_",
-		":", "_",
-		"*", "_",
-		"?", "_",
-		"\"", "_",
-		"<", "_",
-		">", "_",
-		"|", "_",
-		" ", "_",
+		"/", "-",
+		"\\", "-",
+		":", "-",
+		"*", "-",
+		"?", "-",
+		"\"", "-",
+		"<", "-",
+		">", "-",
+		"|", "-",
+		" ", "-",
 	)
-	return replacer.Replace(s)
+	s = replacer.Replace(s)
+
+	// Replace multiple consecutive hyphens with a single hyphen
+	for strings.Contains(s, "--") {
+		s = strings.ReplaceAll(s, "--", "-")
+	}
+
+	// Trim hyphens from the beginning and end
+	return strings.Trim(s, "-")
 }
 
 // New creates a new Logger instance with the given options
