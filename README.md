@@ -1,5 +1,9 @@
 # harlog
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/m-mizutani/harlog.svg)](https://pkg.go.dev/github.com/m-mizutani/harlog)
+[![Test](https://github.com/m-mizutani/harlog/actions/workflows/test.yml/badge.svg)](https://github.com/m-mizutani/harlog/actions/workflows/test.yml)
+[![Lint](https://github.com/m-mizutani/harlog/actions/workflows/lint.yml/badge.svg)](https://github.com/m-mizutani/harlog/actions/workflows/lint.yml)
+
 harlog is a Go library that provides HTTP middleware and RoundTripper implementations for logging HTTP traffic in HAR (HTTP Archive) format. It can be used to capture and analyze HTTP requests and responses in both server and client applications.
 
 ## Features
