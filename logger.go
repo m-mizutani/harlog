@@ -62,7 +62,7 @@ func WithLogger(logger *slog.Logger) Option {
 }
 
 // defaultFileNameFn generates a unique filename for the HAR file
-func defaultFileNameFn(req *http.Request) string {
+func (l *Logger) defaultFileNameFn(req *http.Request) string {
 	now := time.Now().UTC()
 	host := req.Host
 	if host == "" {
@@ -74,7 +74,7 @@ func defaultFileNameFn(req *http.Request) string {
 
 	// Create a unique identifier using timestamp, host, method, and path
 	// Format: YYYYMMDD-HHMMSS.mmm-{uuid}-{host}-{method}-{path}.har
-	return filepath.Join("har_logs",
+	return filepath.Join(l.outputDir,
 		fmt.Sprintf("%s-%s-%s-%s-%s.har",
 			now.Format("20060102-150405.000"),
 			uuid.New().String()[:8],
@@ -106,12 +106,12 @@ func sanitizeFilename(s string) string {
 // New creates a new Logger instance with the given options
 func New(opts ...Option) *Logger {
 	l := &Logger{
-		handler:    http.DefaultServeMux,
-		transport:  http.DefaultTransport,
-		outputDir:  ".",
-		logger:     slog.New(slog.NewTextHandler(os.Stderr, nil)),
-		fileNameFn: defaultFileNameFn,
+		handler:   http.DefaultServeMux,
+		transport: http.DefaultTransport,
+		outputDir: ".",
+		logger:    slog.New(slog.NewTextHandler(os.Stderr, nil)),
 	}
+	l.fileNameFn = l.defaultFileNameFn
 
 	// Apply options
 	for _, opt := range opts {
